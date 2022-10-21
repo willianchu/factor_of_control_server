@@ -8,6 +8,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
+    "dev": "npx nodemon src/server.js",
     "type": "git",
     "url": "git+https://github.com/willianchu/factor_of_control_server.git"
   },
