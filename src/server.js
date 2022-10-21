@@ -27,6 +27,7 @@ app.get('/api/questionnaires/:name', async (req, res) => {
   
   const answers = await db.collection('questionnaires').findOne({ name });
   if(answers) {
+    console.log(answers);
     res.json(answers);
   } else {
     res.status(404).json({ message: 'Questionnaire not found' });
@@ -53,7 +54,7 @@ app.put('/api/questionnaires/:name/index', async (req, res) => {
   const currentAnswers = await db.collection('questionnaires').findOne({ name });
 
   if (currentAnswers) {
-    res.send(`The ${name} questionnaire has answered ${currentAnswers.index} questions`);
+    res.json(currentAnswers);
   } else {
     res.status(404).send(`The ${name} questionnaire was not found`);
   }
@@ -62,18 +63,18 @@ app.put('/api/questionnaires/:name/index', async (req, res) => {
 
 app.post('/api/questionnaires/:name/answers', async (req, res) => {
   const { name } = req.params;
-  const { takeBy, candidateAnswers } = req.body;
-
+  const { candidateAnswers } = req.body;
+  console.log(req.body);
   // const currentAnswers = answers.find((a) => a.name === name);
 
   await db.collection('questionnaires').updateOne({ name }, {
-    $push: { answers: { takeBy, candidateAnswers} }
+    $push: { answers: { candidateAnswers} }
   });
 
   const currentAnswers = await db.collection('questionnaires').findOne({ name });
 
   if (currentAnswers) {
-    res.send(currentAnswers.answers);
+    res.json(currentAnswers);
   } else {
     res.status(404).send(`The ${name} questionnaire was not found`);
     return;
