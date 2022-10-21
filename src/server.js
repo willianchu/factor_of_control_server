@@ -1,25 +1,39 @@
 import  express  from "express";
+import { db, connectToDB } from "./db.js";
 
-let answers = [
-  {
-    name: "disc-test",
-    answers: [],
-    index: 0,
-  },
-  {
-    name: "soft-skills",
-    answers: [],
-    index: 0,
-  },
-  {
-    name: "knowledge",
-    answers: [],
-    index: 0,
-  },
-];
+// let answers = [
+//   {
+//     name: "disc-test",
+//     answers: [],
+//     index: 0,
+//   },
+//   {
+//     name: "soft-skills",
+//     answers: [],
+//     index: 0,
+//   },
+//   {
+//     name: "knowledge",
+//     answers: [],
+//     index: 0,
+//   },
+// ];
 
 const app = express();
 app.use(express.json());
+
+app.get('/api/questionnaires/:name', async (req, res) => {
+  const { name } = req.params;
+  
+  const answers = await db.collection('questionnaires').findOne({ name });
+  if(answers) {
+    res.json(answers);
+  } else {
+    res.status(404).json({ message: 'Questionnaire not found' });
+  }
+});
+
+
 
 app.post("/hello", (req, res) => {
   res.send(`Hello ${req.query.name}!`);
@@ -30,12 +44,15 @@ app.get('/hello/:name', (req, res) => {
   res.send(`Hello ${name}!`);
 });
 
-app.put('/api/questionnaire/:name/answers', (req, res) => {
+app.put('/api/questionnaires/:name/index', async (req, res) => {
   const { name } = req.params;
-  const currentAnswers = answers.find((a) => a.name === name);
+  // const currentAnswers = answers.find((a) => a.name === name); memory data
+
+  await db.collection('questionnaires').updateOne({ name }, { $inc: { index: 1 } });
+
+  const currentAnswers = await db.collection('questionnaires').findOne({ name });
+
   if (currentAnswers) {
-    currentAnswers.index = currentAnswers.index + 1;
-    // currentAnswers.answers.push(req.body);
     res.send(`The ${name} questionnaire has answered ${currentAnswers.index} questions`);
   } else {
     res.status(404).send(`The ${name} questionnaire was not found`);
@@ -43,9 +60,32 @@ app.put('/api/questionnaire/:name/answers', (req, res) => {
 });
 
 
+app.post('/api/questionnaires/:name/answers', async (req, res) => {
+  const { name } = req.params;
+  const { takeBy, candidateAnswers } = req.body;
+
+  // const currentAnswers = answers.find((a) => a.name === name);
+
+  await db.collection('questionnaires').updateOne({ name }, {
+    $push: { answers: { takeBy, candidateAnswers} }
+  });
+
+  const currentAnswers = await db.collection('questionnaires').findOne({ name });
+
+  if (currentAnswers) {
+    res.send(currentAnswers.answers);
+  } else {
+    res.status(404).send(`The ${name} questionnaire was not found`);
+    return;
+  }
+
+});
 
 const PORT = process.env.PORT || 8000;
 
-app.listen(PORT, () => {
-  console.log("Server is listening on port " + PORT);
+connectToDB(() => {
+  console.log('Connected to DB');
+  app.listen(PORT, () => {
+    console.log("Server is listening on port " + PORT);
+  });
 });
